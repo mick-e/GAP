@@ -3,13 +3,34 @@ from functools import lru_cache
 
 
 class Settings(BaseSettings):
-    github_token: str
+    # GitHub
+    github_token: str = ""
     github_org: str = "bhapi-inc"
-    github_repos: str = ""  # Comma-separated list, empty = all repos
+    github_repos: str = ""
+    github_webhook_secret: str = ""
 
+    # API
     api_host: str = "0.0.0.0"
     api_port: int = 8000
     debug: bool = False
+
+    # Database
+    database_url: str = "sqlite+aiosqlite:///./bhapi.db"
+
+    # Auth
+    secret_key: str = "change-me-in-production"
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 60
+
+    # Redis (optional)
+    redis_url: str = ""
+
+    # SMTP (optional)
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from: str = ""
 
     @property
     def repo_list(self) -> list[str]:

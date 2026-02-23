@@ -162,6 +162,10 @@ class GitHubClient:
                 return []  # Secret scanning not enabled
             raise
 
+    # Reviews
+    async def list_reviews(self, repo: str, pr_number: int) -> list[dict]:
+        return await self._paginate(f"/repos/{self.org}/{repo}/pulls/{pr_number}/reviews")
+
     # Languages & Stats
     async def get_languages(self, repo: str) -> dict[str, int]:
         return await self._request("GET", f"/repos/{self.org}/{repo}/languages")

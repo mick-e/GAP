@@ -45,5 +45,12 @@ htmlcov/
 .DS_Store
 Thumbs.db
 
+# Database
+*.db
+
+# Dashboard
+dashboard/node_modules/
+dashboard/dist/
+
 # Cloned repositories (root-level only)
 /github/

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "bhapi"
-version = "0.1.0"
+version = "0.2.0"
 description = "GitHub Reports API for bhapi-inc organization"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -17,6 +17,13 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "reportlab>=4.0.0",
     "pandas>=2.1.0",
+    "sqlalchemy[asyncio]>=2.0",
+    "aiosqlite>=0.19",
+    "alembic>=1.13",
+    "python-jose[cryptography]>=3.3",
+    "redis[hiredis]>=5.0",
+    "apscheduler>=3.10",
+    "aiosmtplib>=3.0",
 ]
 
 [project.optional-dependencies]
@@ -25,7 +32,15 @@ dev = [
     "pytest-asyncio>=0.23.0",
     "pytest-cov>=4.1.0",
     "ruff>=0.1.0",
+    "fakeredis>=2.21",
+    "httpx",
 ]
+postgres = [
+    "asyncpg>=0.29",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
 
 [tool.ruff]
 line-length = 100
