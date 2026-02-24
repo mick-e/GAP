@@ -1,5 +1,4 @@
 import pytest
-from unittest.mock import patch, AsyncMock
 
 from src.cache import cache_get, cache_set, cache_delete, cache_invalidate_pattern, cached
 

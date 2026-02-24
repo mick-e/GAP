@@ -1,4 +1,3 @@
-import pytest
 
 
 async def test_create_schedule(auth_client):

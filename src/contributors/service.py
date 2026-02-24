@@ -1,5 +1,4 @@
-from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from src.github.client import GitHubClient
 from .schemas import ContributorProfile, ContributorRanking, ContributorActivity
@@ -59,7 +58,7 @@ class ContributorService:
             all_repos = await self.client.list_repos()
             repos = [r["name"] for r in all_repos]
 
-        since = datetime.utcnow() - timedelta(days=days)
+        since = datetime.now(timezone.utc) - timedelta(days=days)
         daily: dict[str, ContributorActivity] = {}
 
         for repo_name in repos:

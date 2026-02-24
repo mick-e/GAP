@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import AsyncMock
-from datetime import datetime
+from datetime import datetime, timezone
 
 from src.teams.service import TeamService
 from src.teams.schemas import DORAMetrics
@@ -25,7 +25,7 @@ def mock_client():
     client.list_releases.return_value = [
         {
             "tag_name": "v1.0.0",
-            "published_at": datetime.utcnow().isoformat() + "Z",
+            "published_at": datetime.now(timezone.utc).isoformat() + "Z",
         },
     ]
     client.list_contributors.return_value = [
@@ -41,8 +41,8 @@ def mock_client():
         },
     ]
     client.list_workflow_runs.return_value = [
-        {"created_at": datetime.utcnow().isoformat() + "Z", "conclusion": "success"},
-        {"created_at": datetime.utcnow().isoformat() + "Z", "conclusion": "failure"},
+        {"created_at": datetime.now(timezone.utc).isoformat() + "Z", "conclusion": "success"},
+        {"created_at": datetime.now(timezone.utc).isoformat() + "Z", "conclusion": "failure"},
     ]
     return client
 

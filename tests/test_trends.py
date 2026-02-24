@@ -1,4 +1,3 @@
-import pytest
 from datetime import date, timedelta
 
 from src.models.snapshot import Snapshot

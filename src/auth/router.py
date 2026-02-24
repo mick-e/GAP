@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.database import get_db
 from src.models.user import User
 from src.models.api_key import ApiKey
+from src.middleware import limiter
 from .service import (
     create_user,
     authenticate_user,
@@ -44,6 +45,7 @@ class UserResponse(BaseModel):
 
 class ApiKeyCreateRequest(BaseModel):
     name: str
+    permissions: dict | None = None
 
 
 class ApiKeyResponse(BaseModel):
@@ -55,7 +57,8 @@ class ApiKeyResponse(BaseModel):
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit("5/minute")
+async def register(request: Request, body: RegisterRequest, db: AsyncSession = Depends(get_db)):
     existing = await get_user_by_email(db, body.email)
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -66,7 +69,8 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit("10/minute")
+async def login(request: Request, body: LoginRequest, db: AsyncSession = Depends(get_db)):
     user = await authenticate_user(db, body.email, body.password)
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
@@ -89,7 +93,8 @@ async def create_api_key_endpoint(
 ):
     raw_key, hashed_key, prefix = generate_api_key()
     api_key = ApiKey(
-        name=body.name, hashed_key=hashed_key, prefix=prefix, user_id=user.id
+        name=body.name, hashed_key=hashed_key, prefix=prefix, user_id=user.id,
+        permissions=body.permissions or {},
     )
     db.add(api_key)
     await db.commit()

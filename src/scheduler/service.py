@@ -76,7 +76,7 @@ async def get_due_jobs(db: AsyncSession) -> list[ScheduledJob]:
     now = datetime.now(timezone.utc)
     result = await db.execute(
         select(ScheduledJob).where(
-            ScheduledJob.is_active == True,
+            ScheduledJob.is_active.is_(True),
             ScheduledJob.next_run_at <= now,
         )
     )

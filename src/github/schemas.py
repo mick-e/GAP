@@ -108,7 +108,7 @@ class Issue(BaseModel):
             title=data["title"],
             state=data["state"],
             user_login=data["user"]["login"],
-            labels=[l["name"] for l in data.get("labels", [])],
+            labels=[label["name"] for label in data.get("labels", [])],
             created_at=datetime.fromisoformat(data["created_at"].rstrip("Z")),
             updated_at=datetime.fromisoformat(data["updated_at"].rstrip("Z")),
             closed_at=datetime.fromisoformat(data["closed_at"].rstrip("Z")) if data.get("closed_at") else None,

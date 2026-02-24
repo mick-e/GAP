@@ -1,4 +1,5 @@
-from datetime import datetime, timedelta
+import logging
+from datetime import datetime, timedelta, timezone
 from collections import defaultdict
 
 from src.github.client import GitHubClient
@@ -14,12 +15,15 @@ from .schemas import (
 )
 
 
+logger = logging.getLogger(__name__)
+
+
 class ActivityReportService:
     def __init__(self, client: GitHubClient):
         self.client = client
 
     def _get_date_range(self, period: ReportPeriod) -> tuple[datetime, datetime]:
-        end = datetime.utcnow()
+        end = datetime.now(timezone.utc)
         if period == ReportPeriod.DAY:
             start = end - timedelta(days=1)
         elif period == ReportPeriod.WEEK:
@@ -195,7 +199,7 @@ class ActivityReportService:
 
             except Exception as e:
                 # Log error but continue with other repos
-                print(f"Error processing repo {repo_name}: {e}")
+                logger.error("Error processing repo %s: %s", repo_name, e)
                 continue
 
         return ActivityReport(
@@ -203,7 +207,7 @@ class ActivityReportService:
             period=period,
             start_date=start_date,
             end_date=end_date,
-            generated_at=datetime.utcnow(),
+            generated_at=datetime.now(timezone.utc),
             repos=repo_summaries,
             totals=totals,
         )

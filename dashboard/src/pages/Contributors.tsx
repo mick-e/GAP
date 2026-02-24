@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { contributors } from '../api/client'
@@ -6,6 +7,7 @@ import PageLoader from '../components/PageLoader'
 
 export default function Contributors() {
   const navigate = useNavigate()
+  const [search, setSearch] = useState('')
   const { data, isLoading } = useQuery({
     queryKey: ['contributors'],
     queryFn: () => contributors.list(),
@@ -13,11 +15,24 @@ export default function Contributors() {
 
   if (isLoading) return <PageLoader />
 
+  const filtered = (data || []).filter((c: ContributorProfile) =>
+    !search.trim() || c.login.toLowerCase().includes(search.toLowerCase())
+  )
+
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4">Contributors</h2>
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="Search contributors..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full max-w-md px-3 py-1.5 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-400"
+        />
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {(data || []).map((c: ContributorProfile) => (
+        {filtered.map((c: ContributorProfile) => (
           <div
             key={c.login}
             onClick={() => navigate(`/contributors/${c.login}`)}

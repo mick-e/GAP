@@ -1,4 +1,4 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
 
 
@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     # Redis (optional)
     redis_url: str = ""
 
+    # CORS
+    cors_origins: str = "http://localhost:5173,http://localhost:8000"
+
     # SMTP (optional)
     smtp_host: str = ""
     smtp_port: int = 587
@@ -38,9 +41,13 @@ class Settings(BaseSettings):
             return []
         return [r.strip() for r in self.github_repos.split(",") if r.strip()]
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    @property
+    def cors_origin_list(self) -> list[str]:
+        if not self.cors_origins:
+            return []
+        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 
 @lru_cache

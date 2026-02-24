@@ -3,7 +3,6 @@ from fastapi.responses import Response
 
 from src.config import Settings, get_settings
 from src.github.client import GitHubClient
-from src.exports import PDFExporter, CSVExporter
 from .service import ContributorService
 from .schemas import ContributorProfile, ContributorRanking, ContributorActivity
 

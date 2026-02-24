@@ -1,7 +1,6 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from src.github.client import GitHubClient
-from src.github.schemas import PullRequest
 from .schemas import DORAMetrics, TeamMetricsResponse, TeamComparison
 
 
@@ -21,7 +20,7 @@ class TeamService:
 
     async def get_org_metrics(self, days: int = 30) -> TeamMetricsResponse:
         repos = await self.client.list_repos()
-        since = datetime.utcnow() - timedelta(days=days)
+        since = datetime.now(timezone.utc) - timedelta(days=days)
 
         total_commits = 0
         total_prs = 0
@@ -69,7 +68,7 @@ class TeamService:
 
     async def get_dora_metrics(self, days: int = 30) -> DORAMetrics:
         repos = await self.client.list_repos()
-        since = datetime.utcnow() - timedelta(days=days)
+        since = datetime.now(timezone.utc) - timedelta(days=days)
         weeks = max(days / 7, 1)
 
         total_releases = 0
@@ -92,7 +91,6 @@ class TeamService:
                 # Lead time: time from first commit to release
                 for release in recent:
                     pub = datetime.fromisoformat(release["published_at"].rstrip("Z"))
-                    tag = release.get("tag_name", "")
                     try:
                         commits = await self.client.list_commits(name, until=pub)
                         if commits:
@@ -108,7 +106,7 @@ class TeamService:
                 # MTTR: time from bug issue open to close
                 issues = await self.client.list_issues(name, state="closed", since=since)
                 for issue in issues:
-                    labels = [l["name"].lower() for l in issue.get("labels", [])]
+                    labels = [lbl["name"].lower() for lbl in issue.get("labels", [])]
                     if any(t in labels for t in ["bug", "incident", "hotfix"]):
                         created = datetime.fromisoformat(issue["created_at"].rstrip("Z"))
                         closed = issue.get("closed_at")
@@ -144,7 +142,7 @@ class TeamService:
 
     async def compare_repos(self, days: int = 30) -> list[TeamComparison]:
         repos = await self.client.list_repos()
-        since = datetime.utcnow() - timedelta(days=days)
+        since = datetime.now(timezone.utc) - timedelta(days=days)
         weeks = max(days / 7, 1)
         comparisons = []
 

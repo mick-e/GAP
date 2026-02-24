@@ -1,14 +1,17 @@
-from datetime import datetime
+import logging
+from datetime import datetime, timezone
 from collections import defaultdict
 
 from src.github.client import GitHubClient
-from src.github.schemas import WorkflowRun, SecurityAlert
 from .schemas import (
     QualityReport,
     RepoQualitySummary,
     WorkflowStats,
     SecurityStats,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 class QualityReportService:
@@ -120,12 +123,12 @@ class QualityReportService:
                 total_security.low_alerts += security.low_alerts
 
             except Exception as e:
-                print(f"Error processing repo {repo_name}: {e}")
+                logger.error("Error processing repo %s: %s", repo_name, e)
                 continue
 
         return QualityReport(
             org_name=self.client.org,
-            generated_at=datetime.utcnow(),
+            generated_at=datetime.now(timezone.utc),
             repos=repo_summaries,
             totals=total_security,
         )

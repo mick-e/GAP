@@ -33,6 +33,10 @@ async def close_redis():
         _redis = None
 
 
+def get_redis():
+    return _redis
+
+
 def _make_key(prefix: str, *args, **kwargs) -> str:
     raw = f"{prefix}:{args}:{sorted(kwargs.items())}"
     return f"bhapi:{hashlib.md5(raw.encode()).hexdigest()}"

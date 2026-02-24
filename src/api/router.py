@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import Response
 from enum import Enum
 
@@ -15,7 +15,7 @@ from src.reports import (
     OrgSummary,
 )
 from src.exports import PDFExporter, CSVExporter
-from datetime import datetime
+from datetime import datetime, timezone
 
 router = APIRouter(prefix="/api/v1", tags=["reports"])
 
@@ -38,7 +38,7 @@ def get_repos(settings: Settings = Depends(get_settings)) -> list[str]:
 @router.get("/org", response_model=OrgSummary)
 async def get_org_summary(client: GitHubClient = Depends(get_github_client)):
     """Get organization summary with repository stats."""
-    org = await client.get_org()
+    await client.get_org()
     repos = await client.list_repos()
 
     languages: dict[str, int] = {}
@@ -69,7 +69,7 @@ async def get_org_summary(client: GitHubClient = Depends(get_github_client)):
         total_forks=total_forks,
         total_open_issues=total_issues,
         languages=languages,
-        generated_at=datetime.utcnow(),
+        generated_at=datetime.now(timezone.utc),
     )
 
 

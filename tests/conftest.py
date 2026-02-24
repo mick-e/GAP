@@ -10,11 +10,13 @@ os.environ["GITHUB_ORG"] = "test-org"
 from src.config import get_settings
 get_settings.cache_clear()
 
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from httpx import AsyncClient, ASGITransport
+from src.middleware import limiter  # noqa: E402
 
-from src.database import Base, get_db
-import src.models  # noqa: F401 - populate metadata
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine  # noqa: E402
+from httpx import AsyncClient, ASGITransport  # noqa: E402
+
+from src.database import Base, get_db  # noqa: E402
+import src.models  # noqa: F401, E402 - populate metadata
 
 engine = create_async_engine("sqlite+aiosqlite:///./test_bhapi.db", echo=False)
 TestSession = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
@@ -22,6 +24,8 @@ TestSession = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=F
 
 @pytest.fixture(autouse=True)
 async def setup_db():
+    # Reset rate limiter between tests so auth fixtures aren't blocked
+    limiter.reset()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield

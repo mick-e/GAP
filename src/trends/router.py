@@ -2,7 +2,9 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_db
+from src.auth.dependencies import require_admin
 from .service import TrendService
+from .collector import collect_daily_snapshot
 from .schemas import TrendOverview, TrendData, TrendComparison, Sparkline
 
 router = APIRouter(prefix="/api/v1/trends", tags=["trends"])
@@ -36,6 +38,15 @@ async def get_sparklines(
     service: TrendService = Depends(get_trend_service),
 ):
     return await service.get_sparklines(days)
+
+
+@router.post("/collect")
+async def trigger_snapshot_collection(
+    db: AsyncSession = Depends(get_db),
+    _admin=Depends(require_admin),
+):
+    snapshots = await collect_daily_snapshot(db)
+    return {"collected": len(snapshots), "repos": [s.repo_name for s in snapshots]}
 
 
 @router.get("/{metric}", response_model=list[TrendData])

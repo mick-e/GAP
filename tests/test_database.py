@@ -1,13 +1,10 @@
-import pytest
 from sqlalchemy import select
 
-from src.database import Base
 from src.models.user import User
 from src.models.api_key import ApiKey
 from src.models.report import Report
 from src.models.snapshot import Snapshot
 from src.models.webhook_event import WebhookEvent
-from src.models.scheduled_job import ScheduledJob
 from src.models.contributor import Contributor
 from src.models.team_metrics import TeamMetrics
 

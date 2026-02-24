@@ -1,7 +1,5 @@
 import hashlib
 import hmac
-import json
-import pytest
 
 from src.webhooks.verification import verify_github_signature
 

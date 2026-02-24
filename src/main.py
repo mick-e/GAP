@@ -4,18 +4,29 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 from src.config import get_settings
+from src.logging_config import setup_logging
+from src.middleware import limiter, RequestLoggingMiddleware
 
 
 settings = get_settings()
+setup_logging(settings.debug)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     from src.database import create_tables, dispose_engine
+    from src.cache import init_redis, close_redis
+    from src.scheduler.background import start_scheduler, stop_scheduler
     await create_tables()
+    await init_redis()
+    await start_scheduler()
     yield
+    await stop_scheduler()
+    await close_redis()
     await dispose_engine()
 
 
@@ -28,14 +39,21 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Rate limiting
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.cors_origin_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Request logging
+app.add_middleware(RequestLoggingMiddleware)
 
 # Routers
 from src.api import router as api_router  # noqa: E402
@@ -79,7 +97,37 @@ async def root():
 
 @app.get("/health")
 async def health():
-    return {"status": "healthy"}
+    checks = {"status": "healthy"}
+
+    # Check database connectivity
+    try:
+        from src.database import get_engine
+        from sqlalchemy import text
+        engine = get_engine()
+        async with engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+        checks["database"] = "ok"
+    except Exception as e:
+        checks["database"] = f"error: {e}"
+        checks["status"] = "degraded"
+
+    # Check Redis connectivity
+    try:
+        from src.cache import get_redis
+        redis = get_redis()
+        if redis:
+            await redis.ping()
+            checks["redis"] = "ok"
+        else:
+            checks["redis"] = "not configured"
+    except Exception as e:
+        checks["redis"] = f"error: {e}"
+
+    if checks["database"] != "ok":
+        from fastapi.responses import JSONResponse
+        return JSONResponse(content=checks, status_code=503)
+
+    return checks
 
 
 if __name__ == "__main__":

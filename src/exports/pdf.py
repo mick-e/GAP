@@ -1,5 +1,4 @@
 from io import BytesIO
-from datetime import datetime
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -10,7 +9,6 @@ from reportlab.platypus import (
     Spacer,
     Table,
     TableStyle,
-    PageBreak,
 )
 
 from src.reports.schemas import ActivityReport, QualityReport, ReleaseReport

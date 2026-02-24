@@ -1,4 +1,5 @@
-from datetime import datetime
+import logging
+from datetime import datetime, timezone
 
 from src.github.client import GitHubClient
 from src.github.schemas import Release
@@ -7,6 +8,9 @@ from .schemas import (
     RepoReleaseSummary,
     ReleaseInfo,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 class ReleaseReportService:
@@ -54,12 +58,12 @@ class ReleaseReportService:
                 total_releases += len(releases)
 
             except Exception as e:
-                print(f"Error processing repo {repo_name}: {e}")
+                logger.error("Error processing repo %s: %s", repo_name, e)
                 continue
 
         return ReleaseReport(
             org_name=self.client.org,
-            generated_at=datetime.utcnow(),
+            generated_at=datetime.now(timezone.utc),
             repos=repo_summaries,
             total_releases=total_releases,
         )

@@ -35,6 +35,7 @@ export default function Repos() {
           data={(repos || []) as (Repo & Record<string, unknown>)[]}
           columns={columns}
           onRowClick={(r) => navigate(`/repos/${(r as Repo).name}`)}
+          searchable
         />
       </div>
     </div>
