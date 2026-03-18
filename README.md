@@ -1,4 +1,4 @@
-# BHAPI - GitHub Analytics Platform
+# GitHub Analytics Platform
 
 Full-featured GitHub analytics platform with REST APIs, a React dashboard, and production deployment support. Track commits, PRs, issues, releases, contributors, DORA metrics, and more across your GitHub organization.
 
