@@ -63,7 +63,7 @@ async def test_create_api_key(auth_client):
     assert resp.status_code == 201
     data = resp.json()
     assert data["name"] == "Test Key"
-    assert data["key"].startswith("bhapi_")
+    assert data["key"].startswith("gap_")
     assert "prefix" in data
 
 

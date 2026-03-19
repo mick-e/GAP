@@ -1,7 +1,7 @@
-# GAP Project (formerly BHAPI-AI) — Status Review
+# GAP Project (formerly GAP) — Status Review
 
 **Date**: 2026-03-18
-**Repo**: [mick-e/bhapi-ai](https://github.com/mick-e/bhapi-ai)
+**Repo**: [mick-e/GAP](https://github.com/mick-e/GAP)
 **Local Path**: `C:\claude\bhapi`
 **Version**: 0.2.0 (Production Hardened)
 **Branch**: `master` (direct push workflow, clean working tree)
@@ -144,7 +144,7 @@ Node.js 20 actions deprecated — must upgrade to v4 actions (Node.js 24) by Jun
 ## 7. Deployment Status
 
 ### Render Configuration (`render.yaml`)
-- **Service**: `bhapi` (web, Python 3.11.7 + Node 20)
+- **Service**: `gap` (web, Python 3.11.7 + Node 20)
 - **Database**: Managed PostgreSQL (free tier)
 - **Build**: `pip install -e ".[postgres]" && cd dashboard && npm ci && npm run build`
 - **Start**: `uvicorn src.main:app --host 0.0.0.0 --port $PORT`

@@ -50,7 +50,7 @@ def decode_access_token(token: str) -> dict | None:
 
 def generate_api_key() -> tuple[str, str, str]:
     """Returns (raw_key, hashed_key, prefix)."""
-    raw = f"bhapi_{secrets.token_urlsafe(32)}"
+    raw = f"gap_{secrets.token_urlsafe(32)}"
     prefix = raw[:10]
     hashed = hash_password(raw)
     return raw, hashed, prefix

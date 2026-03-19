@@ -39,7 +39,7 @@ describe('App routing', () => {
   it('redirects to login when not authenticated', async () => {
     renderApp('/')
     await waitFor(() => {
-      expect(screen.getByText('BHAPI')).toBeDefined()
+      expect(screen.getByText('GAP')).toBeDefined()
     })
     expect(screen.getByText('GitHub Analytics Dashboard')).toBeDefined()
   })

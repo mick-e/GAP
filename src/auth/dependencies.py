@@ -10,7 +10,7 @@ from .service import decode_access_token, get_user_by_id, find_api_key
 bearer_scheme = HTTPBearer(auto_error=False)
 
 # Store the current API key on the request state for permission checks
-_REQUEST_API_KEY_ATTR = "_bhapi_api_key"
+_REQUEST_API_KEY_ATTR = "_gap_api_key"
 
 
 async def get_current_user(
@@ -23,14 +23,14 @@ async def get_current_user(
 
     token = credentials.credentials
 
-    # Try API key first (bhapi_ prefix)
-    if token.startswith("bhapi_"):
+    # Try API key first (gap_ prefix)
+    if token.startswith("gap_"):
         result = await find_api_key(db, token)
         if result is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
         api_key, user = result
         # Store API key on request for permission checks
-        request.state._bhapi_api_key = api_key
+        request.state._gap_api_key = api_key
         return user
 
     # Try JWT
@@ -44,7 +44,7 @@ async def get_current_user(
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account disabled")
     # JWT users have full access (no API key restrictions)
-    request.state._bhapi_api_key = None
+    request.state._gap_api_key = None
     return user
 
 

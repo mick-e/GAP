@@ -74,7 +74,7 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-sm">
-        <h1 className="text-2xl font-bold mb-1">BHAPI</h1>
+        <h1 className="text-2xl font-bold mb-1">GAP</h1>
         <p className="text-sm text-gray-500 mb-6">GitHub Analytics Dashboard</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">

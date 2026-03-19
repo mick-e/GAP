@@ -33,7 +33,7 @@ async def test_create_api_key(db):
     await db.commit()
     await db.refresh(user)
 
-    key = ApiKey(name="test-key", hashed_key="hashed_key", prefix="bhapi_abcd", user_id=user.id)
+    key = ApiKey(name="test-key", hashed_key="hashed_key", prefix="gap_abcdef", user_id=user.id)
     db.add(key)
     await db.commit()
     await db.refresh(key)
@@ -117,7 +117,7 @@ async def test_user_cascade_delete(db):
     await db.commit()
     await db.refresh(user)
 
-    key = ApiKey(name="cascade-key", hashed_key="hashed_cascade", prefix="bhapi_csc", user_id=user.id)
+    key = ApiKey(name="cascade-key", hashed_key="hashed_cascade", prefix="gap_cascad", user_id=user.id)
     db.add(key)
     await db.commit()
 

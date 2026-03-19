@@ -19,7 +19,7 @@ function renderLayout() {
 describe('Layout', () => {
   it('renders sidebar with navigation links', () => {
     renderLayout()
-    expect(screen.getByText('BHAPI')).toBeDefined()
+    expect(screen.getByText('GAP')).toBeDefined()
     expect(screen.getByText('Dashboard')).toBeDefined()
     expect(screen.getByText('Repos')).toBeDefined()
     expect(screen.getByText('Contributors')).toBeDefined()

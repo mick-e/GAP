@@ -45,7 +45,7 @@ async def execute_scheduled_job(job: ScheduledJob, db: AsyncSession) -> bool:
         if job.recipients:
             await send_report_email(
                 to=job.recipients,
-                subject=f"BHAPI {job.report_type.title()} Report - {job.name}",
+                subject=f"GAP {job.report_type.title()} Report - {job.name}",
                 body=f"<p>Your scheduled {job.report_type} report is attached.</p>",
                 attachment=pdf,
                 attachment_name=filename,

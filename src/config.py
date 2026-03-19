@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     debug: bool = False
 
     # Database
-    database_url: str = "sqlite+aiosqlite:///./bhapi.db"
+    database_url: str = "sqlite+aiosqlite:///./gap.db"
 
     # Auth
     secret_key: str = "change-me-in-production"

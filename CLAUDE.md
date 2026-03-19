@@ -1,7 +1,7 @@
-# BHAPI - GitHub Analytics Platform
+# GAP - GitHub Analytics Platform
 
 ## Overview
-BHAPI is a production-ready GitHub analytics platform with REST APIs, authentication, caching, webhooks, contributor analytics, trend analysis, scheduled reports, DORA metrics, and a React dashboard.
+GAP is a production-ready GitHub analytics platform with REST APIs, authentication, caching, webhooks, contributor analytics, trend analysis, scheduled reports, DORA metrics, and a React dashboard.
 
 ## Tech Stack
 - **Backend**: Python 3.11+ / FastAPI / Uvicorn / SQLAlchemy async / Alembic
@@ -88,7 +88,7 @@ cd dashboard && npx vitest run                # Frontend: 27 tests (5 files)
 ## Environment Variables
 - `GITHUB_TOKEN` - GitHub PAT (required for live data)
 - `GITHUB_ORG` - Organization (default: bhapi-inc)
-- `DATABASE_URL` - Database (default: sqlite+aiosqlite:///./bhapi.db)
+- `DATABASE_URL` - Database (default: sqlite+aiosqlite:///./gap.db)
 - `SECRET_KEY` - JWT signing key (change in production!)
 - `REDIS_URL` - Redis cache (optional, degrades gracefully)
 - `CORS_ORIGINS` - Comma-separated allowed origins (default: localhost:5173,localhost:8000)

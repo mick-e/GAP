@@ -39,7 +39,7 @@ def get_redis():
 
 def _make_key(prefix: str, *args, **kwargs) -> str:
     raw = f"{prefix}:{args}:{sorted(kwargs.items())}"
-    return f"bhapi:{hashlib.md5(raw.encode()).hexdigest()}"
+    return f"gap:{hashlib.md5(raw.encode()).hexdigest()}"
 
 
 async def cache_get(key: str) -> Any | None:
@@ -76,7 +76,7 @@ async def cache_invalidate_pattern(pattern: str) -> None:
     try:
         cursor = 0
         while True:
-            cursor, keys = await _redis.scan(cursor, match=f"bhapi:{pattern}*", count=100)
+            cursor, keys = await _redis.scan(cursor, match=f"gap:{pattern}*", count=100)
             if keys:
                 await _redis.delete(*keys)
             if cursor == 0:

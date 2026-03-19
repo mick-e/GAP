@@ -143,7 +143,7 @@ async def execute_export(export: ScheduledExport, db: AsyncSession) -> bool:
         if export.recipients:
             await send_report_email(
                 to=export.recipients,
-                subject=f"BHAPI Scheduled Export - {export.name}",
+                subject=f"GAP Scheduled Export - {export.name}",
                 body=f"<p>Your scheduled {export.data_source} export is attached.</p>",
                 attachment=content if isinstance(content, bytes) else content.encode(),
                 attachment_name=filename,

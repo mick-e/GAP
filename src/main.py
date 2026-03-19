@@ -31,7 +31,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="BHAPI - GitHub Reports API",
+    title="GAP - GitHub Analytics Platform",
     description="Generate comprehensive reports for GitHub organization repositories",
     version="0.2.0",
     docs_url="/docs",
@@ -98,7 +98,7 @@ if dashboard_dist.exists():
 @app.get("/")
 async def root():
     return {
-        "name": "BHAPI - GitHub Reports API",
+        "name": "GAP - GitHub Analytics Platform",
         "version": "0.2.0",
         "organization": settings.github_org,
         "docs": "/docs",

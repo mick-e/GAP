@@ -1,6 +1,6 @@
-# BHAPI Dashboard
+# GAP Dashboard
 
-React frontend for the BHAPI GitHub Analytics Platform.
+React frontend for the GAP GitHub Analytics Platform.
 
 ## Stack
 

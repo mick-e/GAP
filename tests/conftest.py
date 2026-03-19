@@ -2,7 +2,7 @@ import pytest
 import os
 
 # Force test env vars BEFORE any imports
-os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///./test_bhapi.db"
+os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///./test_gap.db"
 os.environ["SECRET_KEY"] = "test-secret-key-for-testing"
 os.environ["GITHUB_TOKEN"] = "ghp_test_token_for_testing"
 os.environ["GITHUB_ORG"] = "test-org"
@@ -18,7 +18,7 @@ from httpx import AsyncClient, ASGITransport  # noqa: E402
 from src.database import Base, get_db  # noqa: E402
 import src.models  # noqa: F401, E402 - populate metadata
 
-engine = create_async_engine("sqlite+aiosqlite:///./test_bhapi.db", echo=False)
+engine = create_async_engine("sqlite+aiosqlite:///./test_gap.db", echo=False)
 TestSession = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
