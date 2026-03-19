@@ -1,8 +1,11 @@
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import Response
 
 from src.config import Settings, get_settings
 from src.github.client import GitHubClient
+from src.api.filters import DateRangeFilter, PaginationFilter, SortFilter
 from .service import ContributorService
 from .schemas import ContributorProfile, ContributorRanking, ContributorActivity
 
@@ -14,12 +17,45 @@ def get_contributor_service(settings: Settings = Depends(get_settings)) -> Contr
     return ContributorService(client)
 
 
-@router.get("", response_model=list[ContributorProfile])
+@router.get("")
 async def list_contributors(
     repos: list[str] | None = Query(None),
+    min_commits: Optional[int] = Query(None, ge=0, description="Minimum commits"),
+    sort_by: Optional[str] = Query(
+        None,
+        description="Sort by: commits, prs, issues, reviews",
+    ),
+    sort_order: str = Query("desc", pattern="^(asc|desc)$"),
+    date_range: DateRangeFilter = Depends(),
+    pagination: PaginationFilter = Depends(),
     service: ContributorService = Depends(get_contributor_service),
 ):
-    return await service.get_all_contributors(repos)
+    """List contributors with filtering, sorting, and pagination."""
+    all_contributors = await service.get_all_contributors(repos)
+
+    # Filter by min commits
+    if min_commits is not None:
+        all_contributors = [
+            c for c in all_contributors if c.total_commits >= min_commits
+        ]
+
+    # Sort
+    sort_field_map = {
+        "commits": "total_commits",
+        "prs": "total_prs",
+        "issues": "total_issues",
+        "reviews": "total_reviews",
+    }
+    if sort_by and sort_by in sort_field_map:
+        all_contributors.sort(
+            key=lambda c: getattr(c, sort_field_map[sort_by], 0),
+            reverse=(sort_order == "desc"),
+        )
+
+    total = len(all_contributors)
+    items = all_contributors[pagination.offset: pagination.offset + pagination.limit]
+
+    return {"items": [c.model_dump() for c in items], "total": total}
 
 
 @router.get("/rankings", response_model=list[ContributorRanking])

@@ -14,6 +14,7 @@ from .service import (
     generate_api_key,
     get_user_by_email,
 )
+from src.audit.service import log_action
 from .dependencies import get_current_user
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
@@ -46,6 +47,7 @@ class UserResponse(BaseModel):
 class ApiKeyCreateRequest(BaseModel):
     name: str
     permissions: dict | None = None
+    repos: list[str] = []
 
 
 class ApiKeyResponse(BaseModel):
@@ -63,6 +65,11 @@ async def register(request: Request, body: RegisterRequest, db: AsyncSession = D
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
     user = await create_user(db, body.email, body.password, body.name)
+    await log_action(
+        db, user.id, "auth.register", "user", user.id,
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+    )
     return UserResponse(
         id=user.id, email=user.email, name=user.name, role=user.role, is_active=user.is_active
     )
@@ -73,8 +80,19 @@ async def register(request: Request, body: RegisterRequest, db: AsyncSession = D
 async def login(request: Request, body: LoginRequest, db: AsyncSession = Depends(get_db)):
     user = await authenticate_user(db, body.email, body.password)
     if not user:
+        await log_action(
+            db, None, "auth.login", status="failure",
+            details={"email": body.email},
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent"),
+        )
         raise HTTPException(status_code=401, detail="Invalid credentials")
     token = create_access_token({"sub": user.id})
+    await log_action(
+        db, user.id, "auth.login", "user", user.id,
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+    )
     return TokenResponse(access_token=token)
 
 
@@ -87,18 +105,28 @@ async def get_me(user: User = Depends(get_current_user)):
 
 @router.post("/api-keys", response_model=ApiKeyResponse, status_code=status.HTTP_201_CREATED)
 async def create_api_key_endpoint(
+    request: Request,
     body: ApiKeyCreateRequest,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     raw_key, hashed_key, prefix = generate_api_key()
+    perms = body.permissions or {}
+    if body.repos:
+        perms["repos"] = body.repos
     api_key = ApiKey(
         name=body.name, hashed_key=hashed_key, prefix=prefix, user_id=user.id,
-        permissions=body.permissions or {},
+        permissions=perms,
     )
     db.add(api_key)
     await db.commit()
     await db.refresh(api_key)
+    await log_action(
+        db, user.id, "api_key.create", "api_key", api_key.id,
+        details={"name": body.name, "prefix": prefix},
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+    )
     return ApiKeyResponse(
         id=api_key.id,
         name=api_key.name,
@@ -124,6 +152,7 @@ async def list_api_keys(
 
 @router.delete("/api-keys/{key_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_api_key(
+    request: Request,
     key_id: str,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -136,3 +165,9 @@ async def delete_api_key(
         raise HTTPException(status_code=404, detail="API key not found")
     await db.delete(key)
     await db.commit()
+    await log_action(
+        db, user.id, "api_key.delete", "api_key", key_id,
+        details={"name": key.name, "prefix": key.prefix},
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+    )

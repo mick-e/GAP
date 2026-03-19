@@ -5,7 +5,10 @@ from src.database import get_db
 from src.auth.dependencies import require_admin
 from .service import TrendService
 from .collector import collect_daily_snapshot
-from .schemas import TrendOverview, TrendData, TrendComparison, Sparkline
+from .schemas import (
+    TrendOverview, TrendData, TrendComparison, Sparkline,
+    TrendPrediction, MovingAveragePoint,
+)
 
 router = APIRouter(prefix="/api/v1/trends", tags=["trends"])
 
@@ -38,6 +41,25 @@ async def get_sparklines(
     service: TrendService = Depends(get_trend_service),
 ):
     return await service.get_sparklines(days)
+
+
+@router.get("/predictions/{metric}", response_model=TrendPrediction)
+async def get_predictions(
+    metric: str,
+    days: int = Query(90, ge=7, le=365),
+    service: TrendService = Depends(get_trend_service),
+):
+    return await service.get_metric_predictions(metric, days)
+
+
+@router.get("/moving-average/{metric}", response_model=list[MovingAveragePoint])
+async def get_moving_average(
+    metric: str,
+    days: int = Query(90, ge=7, le=365),
+    window: int = Query(7, ge=2, le=30),
+    service: TrendService = Depends(get_trend_service),
+):
+    return await service.get_metric_moving_average(metric, days, window)
 
 
 @router.post("/collect")

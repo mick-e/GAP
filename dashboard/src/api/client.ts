@@ -53,6 +53,22 @@ export const auth = {
     }),
   listApiKeys: () => request<Array<{ id: string; name: string; prefix: string }>>('/auth/api-keys'),
   deleteApiKey: (id: string) => request(`/auth/api-keys/${id}`, { method: 'DELETE' }),
+  createApiKeyWithRepos: (name: string, repos: string[]) =>
+    request<{ id: string; name: string; prefix: string; key: string }>('/auth/api-keys', {
+      method: 'POST',
+      body: JSON.stringify({ name, repos: repos.length > 0 ? repos : undefined }),
+    }),
+};
+
+// OAuth
+export const oauth = {
+  githubAuthorize: () => request<{ url: string }>('/oauth/github/authorize'),
+  githubCallback: (code: string) =>
+    request<{ access_token: string; user: { email: string; name: string } }>('/oauth/github/callback', {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    }),
+  status: () => request<{ github_enabled: boolean }>('/oauth/github/status'),
 };
 
 // Org & Repos
@@ -92,6 +108,10 @@ export const trends = {
   sparklines: (days = 14) => request<Sparkline[]>(`/trends/sparklines?days=${days}`),
   metric: (name: string, days = 30) => request(`/trends/${name}?days=${days}`),
   compare: (metric: string) => request(`/trends/compare?metric=${metric}`),
+  predictions: (metric: string, days = 90) =>
+    request<TrendPrediction>(`/trends/predictions/${metric}?days=${days}`),
+  movingAverage: (metric: string, days = 90, window = 7) =>
+    request<MovingAveragePoint[]>(`/trends/moving-average/${metric}?days=${days}&window=${window}`),
 };
 
 // Teams
@@ -99,6 +119,32 @@ export const teams = {
   metrics: (days = 30) => request<TeamMetrics>(`/teams/metrics?days=${days}`),
   dora: (days = 30) => request<DORAMetrics>(`/teams/dora?days=${days}`),
   compare: (days = 30) => request<TeamComparison[]>(`/teams/compare?days=${days}`),
+};
+
+// Custom Metrics
+export const customMetrics = {
+  list: () => request<CustomMetricResponse[]>('/metrics/custom'),
+  get: (id: string) => request<CustomMetricResponse>(`/metrics/custom/${id}`),
+  create: (data: CustomMetricCreate) =>
+    request<CustomMetricResponse>('/metrics/custom', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: string, data: Partial<CustomMetricCreate>) =>
+    request<CustomMetricResponse>(`/metrics/custom/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (id: string) => request(`/metrics/custom/${id}`, { method: 'DELETE' }),
+  evaluate: (id: string, days = 30) =>
+    request<CustomMetricEvaluation>(`/metrics/custom/${id}/evaluate?days=${days}`, { method: 'POST' }),
+  variables: () => request<VariableInfo[]>('/metrics/variables'),
+};
+
+// Export Schedules
+export const exportSchedules = {
+  list: () => request<ExportScheduleResponse[]>('/exports/schedules'),
+  get: (id: string) => request<ExportScheduleResponse>(`/exports/schedules/${id}`),
+  create: (data: ExportScheduleCreate) =>
+    request<ExportScheduleResponse>('/exports/schedule', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: string, data: Partial<ExportScheduleCreate>) =>
+    request<ExportScheduleResponse>(`/exports/schedules/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (id: string) => request(`/exports/schedules/${id}`, { method: 'DELETE' }),
+  run: (id: string) => request(`/exports/schedules/${id}/run`, { method: 'POST' }),
 };
 
 // Schedules
@@ -110,9 +156,69 @@ export const schedules = {
     request<Schedule>(`/schedules/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (id: string) => request(`/schedules/${id}`, { method: 'DELETE' }),
   run: (id: string) => request(`/schedules/${id}/run`, { method: 'POST' }),
+  templates: () => request<ScheduleTemplate[]>('/schedules/templates'),
+  template: (id: string) => request<ScheduleTemplate>(`/schedules/templates/${id}`),
+  createFromTemplate: (data: { template_id: string; recipients: string[]; name?: string }) =>
+    request<Schedule>('/schedules/from-template', { method: 'POST', body: JSON.stringify(data) }),
 };
 
+// Webhooks
+export const webhooks = {
+  events: (params?: Record<string, string>) =>
+    request<WebhookEvent[]>(`/webhooks/events${params ? `?${new URLSearchParams(params)}` : ''}`),
+  event: (id: string) => request<WebhookEventDetail>(`/webhooks/events/${id}`),
+  replay: (id: string) => request<WebhookReplayResult>(`/webhooks/events/${id}/replay`, { method: 'POST' }),
+  replayBatch: (ids: string[]) =>
+    request<WebhookBatchReplayResult>('/webhooks/events/replay-batch', {
+      method: 'POST',
+      body: JSON.stringify({ event_ids: ids }),
+    }),
+};
+
+// Audit
+export const audit = {
+  logs: (params?: Record<string, string>) =>
+    request<AuditLogEntry[]>(`/audit/logs${params ? `?${new URLSearchParams(params)}` : ''}`),
+  userTrail: (userId: string, limit = 50) =>
+    request<AuditLogEntry[]>(`/audit/logs/${userId}?limit=${limit}`),
+  stats: () => request<AuditStats>('/audit/stats'),
+};
+
+// Notifications
+export const notifications = {
+  list: (unreadOnly = false, limit = 50) =>
+    request<NotificationItem[]>(
+      `/notifications?unread_only=${unreadOnly}&limit=${limit}`
+    ),
+  markRead: (id: string) =>
+    request(`/notifications/${id}/read`, { method: 'POST' }),
+  markAllRead: () =>
+    request('/notifications/read-all', { method: 'POST' }),
+  unreadCount: () =>
+    request<{ count: number }>('/notifications/unread-count'),
+};
+
+export function createNotificationSocket(): WebSocket | null {
+  const token = getToken();
+  if (!token) return null;
+  const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const ws = new WebSocket(
+    `${proto}//${window.location.host}${API_BASE}/ws/notifications?token=${token}`
+  );
+  return ws;
+}
+
 // Types
+export interface NotificationItem {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  data: Record<string, unknown> | null;
+  read: boolean;
+  created_at: string;
+}
+
 export interface OrgSummary {
   org_name: string;
   total_repos: number;
@@ -232,4 +338,127 @@ export interface ScheduleCreate {
   schedule: string;
   recipients: string[];
   config: Record<string, unknown>;
+}
+
+export interface ScheduleTemplate {
+  id: string;
+  name: string;
+  description: string;
+  report_type: string;
+  schedule: string;
+  config: Record<string, unknown>;
+}
+
+export interface TrendPrediction {
+  metric: string;
+  trend: string;
+  slope: number | null;
+  confidence: number | null;
+  predictions: Array<{ date: string; value: number; days_ahead: number }>;
+  historical: Array<{ date: string; value: number }>;
+}
+
+export interface MovingAveragePoint {
+  date: string;
+  value: number;
+  raw_value: number;
+}
+
+export interface CustomMetricResponse {
+  id: string;
+  name: string;
+  description: string | null;
+  formula: string;
+  is_public: boolean;
+  created_by: string;
+  created_at: string;
+}
+
+export interface CustomMetricCreate {
+  name: string;
+  description?: string;
+  formula: string;
+  is_public?: boolean;
+}
+
+export interface CustomMetricEvaluation {
+  metric_id: string;
+  metric_name: string;
+  formula: string;
+  result: number;
+  variables: Record<string, number>;
+}
+
+export interface VariableInfo {
+  name: string;
+  description: string;
+}
+
+export interface ExportScheduleResponse {
+  id: string;
+  name: string;
+  export_type: string;
+  data_source: string;
+  schedule: string;
+  recipients: string[];
+  config: Record<string, unknown> | null;
+  is_active: boolean;
+  last_run_at: string | null;
+  next_run_at: string | null;
+  created_at: string;
+}
+
+export interface ExportScheduleCreate {
+  name: string;
+  export_type: string;
+  data_source: string;
+  schedule: string;
+  recipients: string[];
+  config?: Record<string, unknown>;
+}
+
+export interface AuditLogEntry {
+  id: string;
+  user_id: string | null;
+  action: string;
+  resource_type: string | null;
+  resource_id: string | null;
+  details: Record<string, unknown> | null;
+  ip_address: string | null;
+  status: string;
+  created_at: string;
+}
+
+export interface AuditStats {
+  total: number;
+  by_action: Record<string, number>;
+  by_day: Record<string, number>;
+}
+
+export interface WebhookEvent {
+  id: string;
+  event_type: string;
+  action: string | null;
+  repo_name: string | null;
+  sender: string | null;
+  processed: boolean;
+  error: string | null;
+  created_at: string;
+}
+
+export interface WebhookEventDetail extends WebhookEvent {
+  payload: Record<string, unknown>;
+}
+
+export interface WebhookReplayResult {
+  event_id: string;
+  success: boolean;
+  error: string | null;
+}
+
+export interface WebhookBatchReplayResult {
+  total: number;
+  successful: number;
+  failed: number;
+  results: WebhookReplayResult[];
 }

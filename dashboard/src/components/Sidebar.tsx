@@ -7,7 +7,10 @@ const links = [
   { to: '/contributors', label: 'Contributors', icon: '@' },
   { to: '/trends', label: 'Trends', icon: '^' },
   { to: '/teams', label: 'Teams', icon: '#' },
+  { to: '/metrics', label: 'Metrics', icon: '%' },
   { to: '/reports', label: 'Reports', icon: '=' },
+  { to: '/webhooks', label: 'Webhooks', icon: '&' },
+  { to: '/audit', label: 'Audit Log', icon: '!' },
   { to: '/settings', label: 'Settings', icon: '*' },
 ]
 

@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useSearchParams } from 'react-router-dom'
 import { teams } from '../api/client'
 import type { TeamComparison } from '../api/client'
 import StatCard from '../components/StatCard'
@@ -14,20 +16,51 @@ const ratingColors: Record<string, string> = {
 }
 
 export default function Teams() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [days, setDays] = useState(30)
+  const sortBy = searchParams.get('sort_by') || ''
+  const sortOrder = searchParams.get('sort_order') || 'desc'
+
   const { data: metrics, isLoading } = useQuery({
-    queryKey: ['team-metrics'],
-    queryFn: () => teams.metrics(30),
+    queryKey: ['team-metrics', days],
+    queryFn: () => teams.metrics(days),
   })
 
   const { data: dora } = useQuery({
-    queryKey: ['dora'],
-    queryFn: () => teams.dora(30),
+    queryKey: ['dora', days],
+    queryFn: () => teams.dora(days),
   })
 
+  const compareParams = new URLSearchParams()
+  compareParams.set('days', String(days))
+  if (sortBy) compareParams.set('sort_by', sortBy)
+  if (sortOrder !== 'desc') compareParams.set('sort_order', sortOrder)
+
   const { data: comparison } = useQuery({
-    queryKey: ['team-compare'],
-    queryFn: () => teams.compare(30),
+    queryKey: ['team-compare', days, sortBy, sortOrder],
+    queryFn: async () => {
+      const res = await fetch(
+        `/api/v1/teams/compare?${compareParams.toString()}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+      return res.json()
+    },
   })
+
+  function updateFilter(key: string, value: string) {
+    const params = new URLSearchParams(searchParams)
+    if (value) {
+      params.set(key, value)
+    } else {
+      params.delete(key)
+    }
+    setSearchParams(params)
+  }
 
   if (isLoading) return <PageLoader />
 
@@ -47,6 +80,53 @@ export default function Teams() {
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4">Teams & DORA</h2>
+
+      <div className="flex flex-wrap items-end gap-3 mb-4 bg-white border rounded-lg p-3">
+        <div>
+          <label className="block text-xs text-gray-500 mb-1">
+            Date Range (days)
+          </label>
+          <select
+            value={days}
+            onChange={(e) => setDays(Number(e.target.value))}
+            className="px-3 py-1.5 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-400"
+          >
+            <option value={7}>7 days</option>
+            <option value={14}>14 days</option>
+            <option value={30}>30 days</option>
+            <option value={90}>90 days</option>
+            <option value={180}>180 days</option>
+            <option value={365}>365 days</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs text-gray-500 mb-1">
+            Sort By Metric
+          </label>
+          <select
+            value={sortBy}
+            onChange={(e) => updateFilter('sort_by', e.target.value)}
+            className="px-3 py-1.5 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-400"
+          >
+            <option value="">Default</option>
+            <option value="commits">Commits</option>
+            <option value="prs">PRs</option>
+            <option value="releases">Releases</option>
+            <option value="contributors">Contributors</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs text-gray-500 mb-1">Order</label>
+          <select
+            value={sortOrder}
+            onChange={(e) => updateFilter('sort_order', e.target.value)}
+            className="px-3 py-1.5 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-400"
+          >
+            <option value="desc">Desc</option>
+            <option value="asc">Asc</option>
+          </select>
+        </div>
+      </div>
 
       {metrics && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">

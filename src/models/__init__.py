@@ -7,6 +7,10 @@ from .webhook_event import WebhookEvent
 from .scheduled_job import ScheduledJob
 from .contributor import Contributor
 from .team_metrics import TeamMetrics
+from .custom_metric import CustomMetric
+from .scheduled_export import ScheduledExport
+from .audit_log import AuditLog
+from .notification import Notification
 
 __all__ = [
     "UUIDMixin",
@@ -19,4 +23,8 @@ __all__ = [
     "ScheduledJob",
     "Contributor",
     "TeamMetrics",
+    "CustomMetric",
+    "ScheduledExport",
+    "AuditLog",
+    "Notification",
 ]

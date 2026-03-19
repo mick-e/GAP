@@ -54,6 +54,23 @@ async def execute_scheduled_job(job: ScheduledJob, db: AsyncSession) -> bool:
         job.last_run_at = datetime.now(timezone.utc)
         await db.commit()
         logger.info(f"Executed scheduled job: {job.name}")
+
+        # Notify the job creator that the report is ready
+        try:
+            from src.notifications.service import notify_and_broadcast
+            await notify_and_broadcast(
+                db,
+                job.created_by,
+                type="report",
+                title=f"Report Ready: {job.name}",
+                message=(
+                    f"Your scheduled {job.report_type} report has completed."
+                ),
+                data={"job_id": job.id, "report_type": job.report_type},
+            )
+        except Exception as notify_err:
+            logger.warning(f"Failed to send report notification: {notify_err}")
+
         return True
 
     except Exception as e:

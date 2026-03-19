@@ -54,3 +54,4 @@ dashboard/dist/
 
 # Cloned repositories (root-level only)
 /github/
+.claude/worktrees/

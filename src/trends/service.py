@@ -1,10 +1,14 @@
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.snapshot import Snapshot
-from .schemas import TrendData, TrendComparison, TrendOverview, Sparkline
+from .schemas import (
+    TrendData, TrendComparison, TrendOverview, Sparkline,
+    TrendPrediction, MovingAveragePoint,
+)
+from .predictions import linear_regression, moving_average
 
 
 def _direction(change: float) -> str:
@@ -136,6 +140,38 @@ class TrendService:
             ))
 
         return sparklines
+
+    async def get_metric_predictions(
+        self, metric: str, days: int = 90
+    ) -> TrendPrediction:
+        trend_data = await self.get_metric_trend(metric, days)
+        data_points = [
+            (datetime.fromisoformat(d.date), d.value) for d in trend_data
+        ]
+        result = linear_regression(data_points)
+        return TrendPrediction(
+            metric=metric,
+            trend=result["trend"],
+            slope=result.get("slope"),
+            confidence=result.get("confidence"),
+            predictions=result.get("predictions", []),
+            historical=trend_data,
+        )
+
+    async def get_metric_moving_average(
+        self, metric: str, days: int = 90, window: int = 7
+    ) -> list[MovingAveragePoint]:
+        trend_data = await self.get_metric_trend(metric, days)
+        data_points = [
+            (datetime.fromisoformat(d.date), d.value) for d in trend_data
+        ]
+        result = moving_average(data_points, window)
+        return [
+            MovingAveragePoint(
+                date=r["date"], value=r["value"], raw_value=r["raw_value"]
+            )
+            for r in result
+        ]
 
     async def _aggregate_snapshots(self, start: date, end: date) -> dict:
         result = await self.db.execute(

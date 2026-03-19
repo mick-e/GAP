@@ -5,6 +5,10 @@ from datetime import datetime, timedelta, timezone
 from src.database import get_session_factory
 from .service import get_due_jobs, SCHEDULE_INTERVALS
 from .executor import execute_scheduled_job
+from src.exports.scheduler import (
+    get_due_exports, execute_export,
+    SCHEDULE_INTERVALS as EXPORT_INTERVALS,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +37,26 @@ async def _scheduler_loop():
                             logger.warning(f"Scheduled job '{job.name}' failed")
                     except Exception as e:
                         logger.error(f"Error executing job '{job.name}': {e}")
+
+                # Check for due exports
+                due_exports = await get_due_exports(db)
+                for export in due_exports:
+                    try:
+                        success = await execute_export(export, db)
+                        if success:
+                            interval = EXPORT_INTERVALS.get(
+                                export.schedule, timedelta(days=1)
+                            )
+                            export.next_run_at = datetime.now(timezone.utc) + interval
+                            await db.commit()
+                            logger.info(
+                                f"Scheduled export '{export.name}' executed, "
+                                f"next run: {export.next_run_at}"
+                            )
+                        else:
+                            logger.warning(f"Scheduled export '{export.name}' failed")
+                    except Exception as e:
+                        logger.error(f"Error executing export '{export.name}': {e}")
         except Exception as e:
             logger.error(f"Scheduler loop error: {e}")
         await asyncio.sleep(60)

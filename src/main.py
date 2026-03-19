@@ -63,6 +63,11 @@ from src.contributors.router import router as contributors_router  # noqa: E402
 from src.trends.router import router as trends_router  # noqa: E402
 from src.scheduler.router import router as scheduler_router  # noqa: E402
 from src.teams.router import router as teams_router  # noqa: E402
+from src.metrics.router import router as metrics_router  # noqa: E402
+from src.exports.router import router as exports_router  # noqa: E402
+from src.audit import router as audit_router  # noqa: E402
+from src.oauth.router import router as oauth_router  # noqa: E402
+from src.notifications.router import router as notifications_router  # noqa: E402
 
 app.include_router(api_router)
 app.include_router(auth_router)
@@ -71,6 +76,11 @@ app.include_router(contributors_router)
 app.include_router(trends_router)
 app.include_router(scheduler_router)
 app.include_router(teams_router)
+app.include_router(metrics_router)
+app.include_router(exports_router)
+app.include_router(audit_router)
+app.include_router(oauth_router)
+app.include_router(notifications_router)
 
 
 # SPA catch-all: serve dashboard if built

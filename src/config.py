@@ -25,6 +25,10 @@ class Settings(BaseSettings):
     # Redis (optional)
     redis_url: str = ""
 
+    # GitHub OAuth
+    github_client_id: str = ""
+    github_client_secret: str = ""
+
     # CORS
     cors_origins: str = "http://localhost:5173,http://localhost:8000"
 

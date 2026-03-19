@@ -72,6 +72,39 @@ def require_permission(scope: str):
     return _check
 
 
+def require_repo_access(repo_name_param: str = "repo_name"):
+    """Check if API key has access to specific repo.
+
+    Scopes and repos in api_key.permissions are checked.
+    JWT-authenticated users bypass repo checks.
+    """
+    async def dependency(
+        request: Request, user: User = Depends(get_current_user)
+    ) -> User:
+        api_key: ApiKey | None = getattr(
+            request.state, _REQUEST_API_KEY_ATTR, None
+        )
+        if api_key is None:  # JWT user - full access
+            return user
+        perms = api_key.permissions or {}
+        scopes = perms.get("scopes", [])
+        if "*" in scopes:
+            return user
+        repos = perms.get("repos", [])
+        if not repos or "*" in repos:  # Empty = all repos
+            return user
+        repo_name = request.path_params.get(repo_name_param) or (
+            request.query_params.get("repo")
+        )
+        if repo_name and repo_name not in repos:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"API key does not have access to repo: {repo_name}",
+            )
+        return user
+    return dependency
+
+
 async def require_auth(user: User = Depends(get_current_user)) -> User:
     return user
 

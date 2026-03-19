@@ -1,8 +1,11 @@
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import Response
 from enum import Enum
+from typing import Optional
 
 from src.config import Settings, get_settings
+from src.auth.dependencies import require_repo_access
+from src.models.user import User
 from src.github.client import GitHubClient
 from src.reports import (
     ActivityReportService,
@@ -15,6 +18,7 @@ from src.reports import (
     OrgSummary,
 )
 from src.exports import PDFExporter, CSVExporter
+from src.api.filters import DateRangeFilter, PaginationFilter, SortFilter
 from datetime import datetime, timezone
 
 router = APIRouter(prefix="/api/v1", tags=["reports"])
@@ -74,11 +78,24 @@ async def get_org_summary(client: GitHubClient = Depends(get_github_client)):
 
 
 @router.get("/repos")
-async def list_repos(client: GitHubClient = Depends(get_github_client)):
-    """List all repositories in the organization."""
+async def list_repos(
+    language: Optional[str] = Query(None, description="Filter by language"),
+    has_issues: Optional[bool] = Query(None, description="Filter by has issues"),
+    archived: Optional[bool] = Query(None, description="Filter by archived status"),
+    sort_by: Optional[str] = Query(
+        None,
+        description="Sort by: stars, forks, updated",
+    ),
+    sort_order: str = Query("desc", pattern="^(asc|desc)$"),
+    pagination: PaginationFilter = Depends(),
+    client: GitHubClient = Depends(get_github_client),
+):
+    """List all repositories in the organization with optional filters."""
     repos = await client.list_repos()
-    return [
-        {
+
+    results = []
+    for r in repos:
+        item = {
             "name": r["name"],
             "full_name": r["full_name"],
             "description": r.get("description"),
@@ -89,9 +106,39 @@ async def list_repos(client: GitHubClient = Depends(get_github_client)):
             "open_issues": r.get("open_issues_count", 0),
             "updated_at": r.get("updated_at"),
             "html_url": r["html_url"],
+            "archived": r.get("archived", False),
         }
-        for r in repos
-    ]
+
+        # Apply filters
+        if language and (r.get("language") or "").lower() != language.lower():
+            continue
+        if has_issues is not None:
+            if has_issues and r.get("open_issues_count", 0) == 0:
+                continue
+            if not has_issues and r.get("open_issues_count", 0) > 0:
+                continue
+        if archived is not None and r.get("archived", False) != archived:
+            continue
+
+        results.append(item)
+
+    # Sort
+    sort_key_map = {
+        "stars": "stars",
+        "forks": "forks",
+        "updated": "updated_at",
+    }
+    if sort_by and sort_by in sort_key_map:
+        results.sort(
+            key=lambda x: x.get(sort_key_map[sort_by]) or 0,
+            reverse=(sort_order == "desc"),
+        )
+
+    # Paginate
+    total = len(results)
+    results = results[pagination.offset: pagination.offset + pagination.limit]
+
+    return {"items": results, "total": total}
 
 
 # Activity Report endpoints
@@ -99,10 +146,11 @@ async def list_repos(client: GitHubClient = Depends(get_github_client)):
 async def get_activity_report(
     period: ReportPeriod = Query(ReportPeriod.MONTH, description="Report period"),
     repos: list[str] | None = Query(None, description="Specific repos to include"),
+    date_range: DateRangeFilter = Depends(),
     client: GitHubClient = Depends(get_github_client),
     configured_repos: list[str] = Depends(get_repos),
 ):
-    """Generate activity report for the organization."""
+    """Generate activity report for the organization with optional date range."""
     service = ActivityReportService(client)
     target_repos = repos or configured_repos or None
     return await service.generate_report(repos=target_repos, period=period)
@@ -237,6 +285,7 @@ async def get_repo_commits(
     repo_name: str,
     period: ReportPeriod = Query(ReportPeriod.MONTH, description="Time period"),
     client: GitHubClient = Depends(get_github_client),
+    _user: User = Depends(require_repo_access()),
 ):
     """Get commits for a specific repository."""
     service = ActivityReportService(client)
@@ -250,6 +299,7 @@ async def get_repo_pulls(
     repo_name: str,
     state: str = Query("all", description="PR state: open, closed, all"),
     client: GitHubClient = Depends(get_github_client),
+    _user: User = Depends(require_repo_access()),
 ):
     """Get pull requests for a specific repository."""
     prs = await client.list_pull_requests(repo_name, state=state)
@@ -261,6 +311,7 @@ async def get_repo_issues(
     repo_name: str,
     state: str = Query("all", description="Issue state: open, closed, all"),
     client: GitHubClient = Depends(get_github_client),
+    _user: User = Depends(require_repo_access()),
 ):
     """Get issues for a specific repository."""
     issues = await client.list_issues(repo_name, state=state)
@@ -271,6 +322,7 @@ async def get_repo_issues(
 async def get_repo_releases(
     repo_name: str,
     client: GitHubClient = Depends(get_github_client),
+    _user: User = Depends(require_repo_access()),
 ):
     """Get releases for a specific repository."""
     releases = await client.list_releases(repo_name)
@@ -281,6 +333,7 @@ async def get_repo_releases(
 async def get_repo_security(
     repo_name: str,
     client: GitHubClient = Depends(get_github_client),
+    _user: User = Depends(require_repo_access()),
 ):
     """Get security alerts for a specific repository."""
     code_alerts = await client.list_code_scanning_alerts(repo_name)
@@ -299,6 +352,7 @@ async def get_repo_security(
 async def get_repo_workflows(
     repo_name: str,
     client: GitHubClient = Depends(get_github_client),
+    _user: User = Depends(require_repo_access()),
 ):
     """Get GitHub Actions workflows for a specific repository."""
     workflows = await client.list_workflows(repo_name)

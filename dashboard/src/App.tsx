@@ -13,7 +13,10 @@ const ContributorDetail = lazy(() => import('./pages/ContributorDetail'))
 const Trends = lazy(() => import('./pages/Trends'))
 const Teams = lazy(() => import('./pages/Teams'))
 const Reports = lazy(() => import('./pages/Reports'))
+const Metrics = lazy(() => import('./pages/Metrics'))
 const Settings = lazy(() => import('./pages/Settings'))
+const AuditLog = lazy(() => import('./pages/AuditLog'))
+const Webhooks = lazy(() => import('./pages/Webhooks'))
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (!isAuthenticated()) return <Navigate to="/login" replace />
@@ -33,7 +36,10 @@ export default function App() {
           <Route path="contributors/:username" element={<ContributorDetail />} />
           <Route path="trends" element={<Trends />} />
           <Route path="teams" element={<Teams />} />
+          <Route path="metrics" element={<Metrics />} />
           <Route path="reports" element={<Reports />} />
+          <Route path="webhooks" element={<Webhooks />} />
+          <Route path="audit" element={<AuditLog />} />
           <Route path="settings" element={<Settings />} />
         </Route>
       </Routes>

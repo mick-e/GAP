@@ -29,3 +29,18 @@ class Sparkline(BaseModel):
     labels: list[str]
     current: float
     change_percent: float
+
+
+class TrendPrediction(BaseModel):
+    metric: str
+    trend: str  # "increasing", "decreasing", "stable", "flat", "insufficient_data"
+    slope: float | None = None
+    confidence: float | None = None
+    predictions: list[dict]
+    historical: list[TrendData] = []
+
+
+class MovingAveragePoint(BaseModel):
+    date: str
+    value: float
+    raw_value: float
